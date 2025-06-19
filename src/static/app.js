@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li class="participant-item">${email}</li>`
+                      `<li class="participant-item">${email} <button class="unregister-btn" data-activity="${name}" data-email="${email}" title="Unregister ${email}">✖</button></li>`
                   )
                   .join("")}
               </ul>
@@ -60,6 +60,41 @@ document.addEventListener("DOMContentLoaded", () => {
         option.value = name;
         option.textContent = name;
         activitySelect.appendChild(option);
+      });
+
+      // Add event listeners for unregister buttons
+      document.querySelectorAll('.unregister-btn').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          const activity = btn.getAttribute('data-activity');
+          const email = btn.getAttribute('data-email');
+          if (!confirm(`Unregister ${email} from ${activity}?`)) return;
+          try {
+            const response = await fetch(
+              `/activities/${encodeURIComponent(activity)}/unregister?email=${encodeURIComponent(email)}`,
+              { method: 'POST' }
+            );
+            const result = await response.json();
+            if (response.ok) {
+              messageDiv.textContent = result.message;
+              messageDiv.className = 'success';
+              fetchActivities();
+            } else {
+              messageDiv.textContent = result.detail || 'An error occurred';
+              messageDiv.className = 'error';
+            }
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => {
+              messageDiv.classList.add('hidden');
+            }, 5000);
+          } catch (error) {
+            messageDiv.textContent = 'Failed to unregister. Please try again.';
+            messageDiv.className = 'error';
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => {
+              messageDiv.classList.add('hidden');
+            }, 5000);
+          }
+        });
       });
     } catch (error) {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
